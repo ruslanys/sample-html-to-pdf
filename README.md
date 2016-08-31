@@ -8,4 +8,4 @@ https://habrahabr.ru/post/217561/
 mvn clean package
 ```
 
-![Скриншот](post.jpg "Post Image")
+![Скриншот](post.png "Post Image")
