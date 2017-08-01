@@ -1,5 +1,6 @@
 package ru.habrahabr.pdf.servlets;
 
+import com.lowagie.text.DocumentException;
 import org.htmlcleaner.CleanerProperties;
 import org.htmlcleaner.HtmlCleaner;
 import org.htmlcleaner.PrettyXmlSerializer;
@@ -40,7 +41,6 @@ public class PdfServlet extends HttpServlet {
             PrintWriter out = resp.getWriter();
             out.write("<strong>Something wrong</strong><br /><br />");
             ex.printStackTrace(out);
-            ex.printStackTrace();
         }
     }
 
@@ -48,9 +48,8 @@ public class PdfServlet extends HttpServlet {
      * Метод, подготавливащий PDF документ.
      * @param path путь до страницы
      * @return PDF документ
-     * @throws Exception
      */
-    private byte[] performPdfDocument(String path) throws Exception {
+    private byte[] performPdfDocument(String path) throws IOException, DocumentException {
         // Получаем HTML код страницы
         String html = getHtml(path);
 
@@ -94,7 +93,7 @@ public class PdfServlet extends HttpServlet {
 
         boolean redirect = false;
 
-        // normally, 3xx is redirect
+        // Проверка на редирект
         int status = ((HttpURLConnection) urlConnection).getResponseCode();
         if (HttpURLConnection.HTTP_OK != status &&
                 (HttpURLConnection.HTTP_MOVED_TEMP == status ||
@@ -105,15 +104,16 @@ public class PdfServlet extends HttpServlet {
         }
 
         if (redirect) {
-            // get redirect url from "location" header field
+            // Обработка заголовка Location
             String newUrl = urlConnection.getHeaderField("Location");
 
-            // open the new connnection again
+            // Новое соединение до страницы редиректа
             urlConnection = new URL(newUrl).openConnection();
         }
 
         urlConnection.setConnectTimeout(30000);
         urlConnection.setReadTimeout(30000);
+
 
         BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream(), CHARSET));
 
@@ -122,6 +122,8 @@ public class PdfServlet extends HttpServlet {
         while (null != (line = in.readLine())) {
             sb.append(line).append("\n");
         }
+
+        in.close();
 
         return sb.toString().trim();
     }
